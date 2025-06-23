@@ -61,6 +61,7 @@ export default function PostListItem({
         {/* HEADER */}
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Image
+            // @ts-ignore
             source={{ uri: post.group.image }}
             style={{
               width: s(20),
@@ -87,6 +88,7 @@ export default function PostListItem({
                   alignSelf: "flex-start",
                 }}
               >
+                {/*  @ts-ignore */}
                 {formatDistanceToNowStrict(new Date(post.created_at))}
               </Text>
             </View>
@@ -199,6 +201,7 @@ export default function PostListItem({
                   color: textColor,
                 }}
               >
+                {/*  @ts-ignore */}
                 {post.nr_of_comments?.[0].count}
               </Text>
             </View>

@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   Text,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import PostListItem from "../../../component/PostListItem";
 import { getColorScheme } from "../../../config/color";
 import { RootState } from "../../../store/store";
@@ -15,13 +15,21 @@ import { fetchPosts } from "../../../services/postService";
 import { getPost } from "../../../store/slices/postSlice";
 import NetInfo from "@react-native-community/netinfo";
 import { useSupabase } from "../../../config/supabase";
+import { useNavigation } from "@react-navigation/native";
 
 const HomeScreen = () => {
   const supabase = useSupabase();
+  const navigation = useNavigation();
+  const lastOffset = useRef(0);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const { backgroundColor, barStyle } = getColorScheme();
   const postData = useSelector((state: RootState) => state.post.postData);
   const dispatch = useDispatch();
+
+  const baseTabBarStyle = {
+    backgroundColor,
+    borderTopColor: backgroundColor,
+  };
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -65,6 +73,22 @@ const HomeScreen = () => {
     }, 10000);
     return () => clearInterval(intervalId);
   }, [posts]);
+
+  const handleScroll = (event: any) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    const direction = currentOffset > lastOffset.current ? "down" : "up";
+    lastOffset.current = currentOffset;
+
+    if (direction === "down" && currentOffset > 0) {
+      navigation.setOptions({
+        tabBarStyle: { ...baseTabBarStyle, display: "none" },
+      });
+    } else if (direction === "up") {
+      navigation.setOptions({
+        tabBarStyle: { ...baseTabBarStyle, display: "flex" },
+      });
+    }
+  };
 
   console.log("Rendering in main post index file");
 
@@ -110,6 +134,8 @@ const HomeScreen = () => {
           !isFetchingNextPage && hasNextPage && fetchNextPage()
         }
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator /> : null}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
     </View>
   );

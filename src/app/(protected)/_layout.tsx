@@ -1,9 +1,8 @@
 import { Redirect, router, Stack } from "expo-router";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
-import { ms, s } from "react-native-size-matters";
-import { View } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
+import { ms } from "react-native-size-matters";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 
@@ -27,7 +26,7 @@ export default function AuthHomeLayout() {
         options={{
           headerTitle: "",
           headerStyle: { backgroundColor: "#FF5700" },
-          animation: "ios_from_left",
+          animation: "fade",
           headerLeft: () => (
             <AntDesign
               name="close"
@@ -36,6 +35,15 @@ export default function AuthHomeLayout() {
               onPress={() => router.back()}
             />
           ),
+        }}
+      />
+      <Stack.Screen
+        name="Profile"
+        options={{
+          animation: "ios_from_right",
+          presentation: "transparentModal",
+          headerShown: false,
+          gestureEnabled: false,
         }}
       />
     </Stack>

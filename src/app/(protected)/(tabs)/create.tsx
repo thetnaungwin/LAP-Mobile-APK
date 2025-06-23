@@ -24,6 +24,7 @@ import { setGroup } from "../../../store/slices/groupSlice";
 import { useSupabase } from "../../../config/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { uploadImage } from "../../../services/supabaseImage";
+import ModalBox from "../../../component/ModalBox";
 
 const CreateScreen = () => {
   const { backgroundColor, textColor } = getColorScheme();
@@ -34,6 +35,7 @@ const CreateScreen = () => {
   const [title, setTitle] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
   const [bodyText, setBodyText] = useState<string>("");
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
   const group = useSelector((state: RootState) => state.group.group);
 
   const { mutate, isPending } = useMutation({
@@ -92,18 +94,42 @@ const CreateScreen = () => {
     }
   };
 
+  const handleClosePress = () => {
+    if (title || bodyText || group || image) setShowDiscardModal(true);
+    else goBack();
+  };
+
+  const handleDiscard = () => {
+    setShowDiscardModal(false);
+    goBack();
+  };
+
+  const handleCancel = () => {
+    setShowDiscardModal(false);
+  };
+
   console.log("Rendering in creat post file");
 
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor, paddingHorizontal: s(15) }}
     >
+      <ModalBox
+        showDiscardModal={showDiscardModal}
+        handleDiscard={handleDiscard}
+        handleCancel={handleCancel}
+        title="Discard post?"
+        BodyText="If you go back now, your post will be lost."
+        btnActionText="Discard"
+        btnCancelText="Cancel"
+      />
+
       <View style={styles.headerContainer}>
         <AntDesign
           name="close"
           size={ms(24)}
           color={textColor}
-          onPress={() => goBack()}
+          onPress={handleClosePress}
         />
         <Pressable
           onPress={() => onPostClick()}
@@ -241,5 +267,41 @@ export const styles = StyleSheet.create({
     gap: 5,
     alignSelf: "flex-start",
     marginVertical: vs(8),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: "80%",
+    alignItems: "center",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: "#555",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  modalButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
   },
 });
