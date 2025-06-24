@@ -41,6 +41,43 @@ export const fetchPostById = async (
   }
 };
 
+export const fetchPostByUserId = async (
+  user_id: string,
+  supabase: SupabaseClient<Database>
+) => {
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `id,
+      title,
+      groups (
+        name
+      ),
+      upvotes (
+        value
+      )`
+    )
+    .eq("user_id", user_id);
+
+  if (error) {
+    throw error;
+  } else {
+    const postsWithUpvoteCount = data.map((post) => ({
+      post_id: post.id,
+      title: post.title,
+      group_name: post.groups?.name || null,
+      upvote_count:
+        post.upvotes?.reduce(
+          (total: number, upvote: { value: number }) =>
+            total + (upvote.value || 0),
+          0
+        ) || 0,
+    }));
+
+    return postsWithUpvoteCount;
+  }
+};
+
 export const insertPost = async (
   post: InsertPost,
   supabase: SupabaseClient<Database>

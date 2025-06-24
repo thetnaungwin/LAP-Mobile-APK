@@ -128,6 +128,7 @@ const CommentListItem = ({
             color="#737373"
           />
           <Text style={{ fontWeight: "500", color: "#737373" }}>
+            {/* @ts-ignore */}
             {comment.upvotes}
           </Text>
           <MaterialCommunityIcons
