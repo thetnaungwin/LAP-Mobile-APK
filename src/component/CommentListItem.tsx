@@ -1,6 +1,5 @@
-import { View, Text, Image, Pressable, FlatList } from "react-native";
+import { View, Text, Pressable, FlatList } from "react-native";
 import { Entypo, Octicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { formatDistanceToNowStrict } from "date-fns";
 import { getColorScheme } from "../config/color";
 import { ms, s, vs } from "react-native-size-matters";
 import { useState, memo } from "react";
@@ -60,30 +59,6 @@ const CommentListItem = ({
         borderLeftWidth: depth > 0 ? 1 : 0,
       }}
     >
-      {/* User Info */}
-      {/* <View style={{ flexDirection: "row", alignItems: "center", gap: s(3) }}>
-        <Image
-          source={{
-            uri:
-              comment.user.image ||
-              "https://notjustdev-dummy.s3.us-east-2.amazonaws.com/avatars/3.jpg",
-          }}
-          style={{
-            width: s(20),
-            height: vs(20),
-            borderRadius: ms(10),
-            marginRight: s(5),
-          }}
-        />
-        <Text style={{ fontWeight: "600", color: "#737373", fontSize: ms(13) }}>
-          {comment.user.name}
-        </Text>
-        <Text style={{ color: "#737373", fontSize: ms(13) }}>&#x2022;</Text>
-        <Text style={{ color: "#737373", fontSize: ms(13) }}>
-          {formatDistanceToNowStrict(new Date(comment.created_at))}
-        </Text>
-      </View> */}
-
       {/* Comment Content */}
       <Text style={{ color: textColor }}>{comment.comment}</Text>
 

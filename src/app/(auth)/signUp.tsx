@@ -44,10 +44,11 @@ export default function SignUpScreen() {
   const onSignUpPress = async () => {
     if (!isLoaded) return;
 
-    // Start sign-up process using email and password provided
     setLoading(true);
     setWrongPassword(false);
     setIdentifier(false);
+    setInvalidUsername(false);
+
     try {
       await signUp.create({
         emailAddress,
@@ -71,14 +72,17 @@ export default function SignUpScreen() {
       const paramNames =
         errorObject.errors?.map((error: any) => error.meta?.paramName) || [];
 
-      console.log(paramNames);
-      if (paramNames[1] == "password") {
-        setWrongPassword(true);
-      } else if (paramNames[1] == "email_address") {
-        setIdentifier(true);
-      } else {
-        setInvalidUsername(true);
-      }
+      // Reset all error states
+      setWrongPassword(false);
+      setIdentifier(false);
+      setInvalidUsername(false);
+
+      // Set error state for each field that failed
+      paramNames.forEach((param: string) => {
+        if (param === "password") setWrongPassword(true);
+        if (param === "email_address") setIdentifier(true);
+        if (param === "username") setInvalidUsername(true);
+      });
 
       setLoading(false);
     }
@@ -101,6 +105,27 @@ export default function SignUpScreen() {
       // and redirect the user
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
+
+        // --- Add user to Supabase users table ---
+        await fetch("https://iybbljbbacqumygotpbl.supabase.co/rest/v1/users", {
+          method: "POST",
+          headers: {
+            apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify([
+            {
+              user_id: signUpAttempt.createdUserId,
+              user_name: username,
+            },
+          ]),
+        })
+          .then((res) => res.json())
+          .then(console.log)
+          .catch(console.error);
+        // --- End add user ---
+
         router.replace("/");
         dispatch(setLoggedIn(true));
       } else {

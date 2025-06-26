@@ -22,6 +22,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import { getGroup, setGroup } from "../../store/slices/groupSlice";
 import { useSupabase } from "../../config/supabase";
+import { useUser } from "@clerk/clerk-expo";
 
 type Group = Tables<"groups">;
 
@@ -32,6 +33,7 @@ const GroupSelector = () => {
   const { textColor, backgroundColor } = getColorScheme();
   const groupData = useSelector((state: RootState) => state.group.groupData);
   const dispatch = useDispatch();
+  const { user }: any = useUser();
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -43,7 +45,7 @@ const GroupSelector = () => {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["groups", { searchValue }],
-    queryFn: () => fetchGroups(searchValue, supabase),
+    queryFn: () => fetchGroups(user?.id, searchValue, supabase),
     staleTime: 10_000,
     placeholderData: (previousData) => previousData,
     enabled: isConnected === true,

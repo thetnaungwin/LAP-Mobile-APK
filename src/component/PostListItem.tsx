@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createUpvote, selectMyVote } from "../services/upvoteService";
 import { useSession } from "@clerk/clerk-expo";
 import SupabaseImage from "./SupabaseImage";
+import { fetchUsers } from "../services/userService";
 
 type Post = Tables<"posts"> & {
   group: Tables<"groups">;
@@ -37,6 +38,11 @@ export default function PostListItem({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
+  });
+
+  const { data: User } = useQuery({
+    queryKey: ["users", post.id],
+    queryFn: () => fetchUsers(supabase),
   });
 
   const { data: myVote } = useQuery({
@@ -89,12 +95,13 @@ export default function PostListItem({
                 }}
               >
                 {/*  @ts-ignore */}
-                {formatDistanceToNowStrict(new Date(post.created_at))}
+                {formatDistanceToNowStrict(new Date(post.created_at + "Z"))}
               </Text>
             </View>
             {isDetailedPost && (
               <Text style={{ fontSize: ms(13), color: "#2E5DAA" }}>
-                {session?.user.username}
+                {User?.find((item) => item.user_id === post.user_id)
+                  ?.user_name || "Anonymous"}
               </Text>
             )}
           </View>
