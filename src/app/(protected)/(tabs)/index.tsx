@@ -16,6 +16,7 @@ import { getPost } from "../../../store/slices/postSlice";
 import NetInfo from "@react-native-community/netinfo";
 import { useSupabase } from "../../../config/supabase";
 import { useNavigation } from "@react-navigation/native";
+import { useSession } from "@clerk/clerk-expo";
 
 const HomeScreen = () => {
   const supabase = useSupabase();
@@ -25,6 +26,7 @@ const HomeScreen = () => {
   const { backgroundColor, barStyle } = getColorScheme();
   const postData = useSelector((state: RootState) => state.post.postData);
   const dispatch = useDispatch();
+  const { session, isLoaded } = useSession();
 
   const baseTabBarStyle = {
     backgroundColor,
@@ -50,14 +52,14 @@ const HomeScreen = () => {
     hasNextPage,
   } = useInfiniteQuery({
     queryKey: ["posts"],
-    queryFn: ({ pageParam = { limit: 10, offset: 0 } }) =>
+    queryFn: ({ pageParam = { limit: 20, offset: 0 } }) =>
       fetchPosts(pageParam, supabase),
-    enabled: isConnected === true,
-    initialPageParam: { limit: 10, offset: 0 },
+    enabled: isConnected === true && isLoaded && !!session,
+    initialPageParam: { limit: 20, offset: 0 },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length === 0) return undefined;
       return {
-        limit: 2,
+        limit: 4,
         offset: allPages.flat().length,
       };
     },
@@ -70,9 +72,9 @@ const HomeScreen = () => {
       if (posts && postData.length >= 0) {
         dispatch(getPost(posts));
       }
-    }, 10000);
+    }, 1000);
     return () => clearInterval(intervalId);
-  }, [posts]);
+  }, [posts?.length]);
 
   const handleScroll = (event: any) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
@@ -91,8 +93,9 @@ const HomeScreen = () => {
   };
 
   console.log("Rendering in main post index file");
+  console.log("CachedpostLength", postData.length);
 
-  if (isLoading) {
+  if (isLoading || posts == undefined) {
     return (
       <View style={{ backgroundColor, flex: 1 }}>
         <StatusBar
@@ -123,7 +126,7 @@ const HomeScreen = () => {
         backgroundColor={backgroundColor}
       />
       <FlatList
-        data={posts == undefined || !isConnected ? postData : posts}
+        data={!isConnected ? postData : posts}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => <PostListItem post={item} />}

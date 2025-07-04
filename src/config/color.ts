@@ -7,12 +7,7 @@ export const Colors = {
     barStyle: "dark-content",
     groupNameText: "#3A3B3C",
     modalBg: "#FFFFFF",
-    primary: "#007FFF",
-    // primary: "#3978ab",
-    // primary: "#66DEFF",
-    green: "#90EE90",
-    btnColor: "#000000",
-    error: "#FF0000",
+    profileModel: "#fff",
   },
   dark: {
     text: "#FFFFFF",
@@ -20,12 +15,7 @@ export const Colors = {
     barStyle: "light-content",
     groupNameText: "#FFF",
     modalBg: "#0B1215",
-    primary: "#007FFF",
-    // primary: "#3978ab",
-    // primary: "#66DEFF",
-    green: "#90EE90",
-    btnColor: "#FFFFFF",
-    error: "#FF0000",
+    profileModel: "#2A2A2A",
   },
 };
 
@@ -42,7 +32,7 @@ export function getColorScheme() {
 
   const modalBg = Colors[colorScheme ?? "light"].modalBg;
 
-  const btnColor = Colors[colorScheme ?? "light"].btnColor;
+  const profileMdColor = Colors[colorScheme ?? "light"].profileModel;
 
   return {
     backgroundColor,
@@ -50,6 +40,6 @@ export function getColorScheme() {
     barStyle,
     groupNameText,
     modalBg,
-    btnColor,
+    profileMdColor,
   };
 }

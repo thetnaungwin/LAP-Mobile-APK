@@ -4,7 +4,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 type InsertPost = TablesInsert<"posts">;
 
 export const fetchPosts = async (
-  { limit = 10, offset = 0 }: { limit?: number; offset?: number },
+  { limit = 20, offset = 0 }: { limit?: number; offset?: number },
   supabase: SupabaseClient<Database>
 ) => {
   const { data, error } = await supabase

@@ -26,7 +26,7 @@ const { width } = Dimensions.get("window");
 
 const Profile = () => {
   const [tab, setTab] = useState<"Posts" | "Comments" | "About">("Posts");
-  const { backgroundColor } = getColorScheme();
+  const { backgroundColor, profileMdColor, textColor } = getColorScheme();
   const { signOut } = useAuth();
   const { user } = useUser();
   const [showDiscardModal, setShowDiscardModal] = useState(false);
@@ -69,7 +69,9 @@ const Profile = () => {
         btnActionText="Log Out"
         btnCancelText="Cancel"
       />
-      <View style={styles.profileCard}>
+      <View
+        style={[{ ...styles.profileCard, backgroundColor: profileMdColor }]}
+      >
         {/* Banner */}
         <View style={styles.banner} />
         {/* Close Button */}
@@ -89,7 +91,7 @@ const Profile = () => {
         </View>
         {/* User Info */}
         <View style={styles.userInfo}>
-          <Text style={styles.username}>
+          <Text style={[{ ...styles.username, color: textColor }]}>
             {user?.username ? `u/${user.username}` : "u/YourUsername"}
           </Text>
           <View style={styles.statsRow}>
@@ -162,7 +164,7 @@ const Profile = () => {
           )}
           {tab === "About" && (
             <View>
-              <Text style={styles.bio}>
+              <Text style={[{ ...styles.bio, color: textColor }]}>
                 This is your Reddit bio. Edit it to tell people about yourself!
               </Text>
             </View>
@@ -192,7 +194,6 @@ const styles = StyleSheet.create({
   profileCard: {
     width: width > 420 ? 420 : width * 0.95,
     height: "80%",
-    backgroundColor: "#fff",
     borderRadius: s(18),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -250,7 +251,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: ms(22),
     marginBottom: vs(6),
-    color: "#222",
   },
   statsRow: {
     flexDirection: "row",
@@ -354,7 +354,6 @@ const styles = StyleSheet.create({
   },
   bio: {
     fontSize: ms(16),
-    color: "#222",
     textAlign: "center",
     marginTop: 16,
   },

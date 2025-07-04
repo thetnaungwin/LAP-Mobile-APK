@@ -8,9 +8,10 @@ import { Tables } from "../types/database.types";
 import { useSupabase } from "../config/supabase";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createUpvote, selectMyVote } from "../services/upvoteService";
-import { useSession } from "@clerk/clerk-expo";
+import { useSession, useUser } from "@clerk/clerk-expo";
 import SupabaseImage from "./SupabaseImage";
-import { fetchUsers } from "../services/userService";
+import { fetchUsers, updateJoinedGroup } from "../services/userService";
+import { fetchGroups } from "../services/groupService";
 
 type Post = Tables<"posts"> & {
   group: Tables<"groups">;
@@ -30,6 +31,7 @@ export default function PostListItem({
   const supabase = useSupabase();
   const queryClient = useQueryClient();
   const { session } = useSession();
+  const { user }: any = useUser();
   const shouldShowImage = isDetailedPost || post.image;
   const shouldShowDescription = isDetailedPost || !post.image;
 
@@ -38,6 +40,20 @@ export default function PostListItem({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
+  });
+
+  const { mutate: joinGroup, isPending } = useMutation({
+    mutationFn: () => updateJoinedGroup(user.id, post.group_id, supabase),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
+  });
+
+  const { data, error } = useQuery({
+    queryKey: ["groups", user?.id],
+    queryFn: () => fetchGroups(user?.id, "", supabase),
+    staleTime: 10_000,
+    placeholderData: (previousData) => previousData,
   });
 
   const { data: User } = useQuery({
@@ -105,26 +121,32 @@ export default function PostListItem({
               </Text>
             )}
           </View>
-          <Pressable
-            onPress={() => console.error("Pressed")}
-            style={{
-              marginLeft: "auto",
-              backgroundColor: "#0d469b",
-              borderRadius: s(10),
-            }}
-          >
-            <Text
+
+          {data?.filter((item: any) => item.id === post.group_id).length > 0 ? (
+            <></>
+          ) : (
+            <Pressable
+              onPress={() => joinGroup()}
+              disabled={isPending}
               style={{
-                color: "white",
-                paddingVertical: vs(2),
-                paddingHorizontal: s(7),
-                fontWeight: "bold",
-                fontSize: ms(13),
+                marginLeft: "auto",
+                backgroundColor: "#0d469b",
+                borderRadius: s(10),
               }}
             >
-              Join
-            </Text>
-          </Pressable>
+              <Text
+                style={{
+                  color: "white",
+                  paddingVertical: vs(2),
+                  paddingHorizontal: s(7),
+                  fontWeight: "bold",
+                  fontSize: ms(13),
+                }}
+              >
+                {isPending ? "Joining..." : "Join"}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         {/* CONTENT */}

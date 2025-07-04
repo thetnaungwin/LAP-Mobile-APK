@@ -170,6 +170,7 @@ const DetailedPost = () => {
           style={{
             backgroundColor: "lightgray",
             padding: s(5),
+            fontSize: ms(16),
             borderRadius: ms(5),
           }}
         />
@@ -180,7 +181,7 @@ const DetailedPost = () => {
               backgroundColor: "#0d469b",
               borderRadius: ms(15),
               marginLeft: "auto",
-              marginTop: vs(10),
+              marginVertical: vs(4),
             }}
           >
             <Text
@@ -189,7 +190,7 @@ const DetailedPost = () => {
                 paddingVertical: vs(5),
                 paddingHorizontal: s(10),
                 fontWeight: "bold",
-                fontSize: ms(13),
+                fontSize: ms(15),
               }}
             >
               Reply

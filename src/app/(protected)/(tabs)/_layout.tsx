@@ -54,16 +54,12 @@ const TabLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="chat"
+        name="communities"
         options={{
-          title: "Chat",
+          title: "Communities",
           headerTintColor: "#FF5700",
           tabBarIcon: ({ color }) => (
-            <Ionicons
-              name="chatbubble-ellipses-outline"
-              size={ms(24)}
-              color={color}
-            />
+            <Feather name="users" size={ms(24)} color={color} />
           ),
         }}
       />
