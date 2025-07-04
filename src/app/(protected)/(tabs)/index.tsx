@@ -95,7 +95,7 @@ const HomeScreen = () => {
   console.log("Rendering in main post index file");
   console.log("CachedpostLength", postData.length);
 
-  if (isLoading || posts == undefined) {
+  if ((isLoading || posts == undefined) && isConnected) {
     return (
       <View style={{ backgroundColor, flex: 1 }}>
         <StatusBar

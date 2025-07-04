@@ -5,6 +5,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { ms } from "react-native-size-matters";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
+import { TouchableOpacity } from "react-native";
 
 export default function AuthHomeLayout() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
@@ -28,12 +29,9 @@ export default function AuthHomeLayout() {
           headerStyle: { backgroundColor: "#FF5700" },
           animation: "fade",
           headerLeft: () => (
-            <AntDesign
-              name="close"
-              size={ms(26)}
-              color={"white"}
-              onPress={() => router.back()}
-            />
+            <TouchableOpacity onPress={() => router.back()}>
+              <AntDesign name="close" size={ms(26)} color={"white"} />
+            </TouchableOpacity>
           ),
         }}
       />

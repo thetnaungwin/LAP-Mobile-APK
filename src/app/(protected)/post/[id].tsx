@@ -9,6 +9,7 @@ import {
   FlatList,
   TextInput,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useRef, useState, useCallback } from "react";
@@ -23,6 +24,7 @@ import { ms, s, vs } from "react-native-size-matters";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchComments, insertComment } from "../../../services/commentService";
 import { useSession } from "@clerk/clerk-expo";
+import ModalBox from "../../../component/ModalBox";
 
 const DetailedPost = () => {
   const supabase = useSupabase();
@@ -31,6 +33,7 @@ const DetailedPost = () => {
   const [comment, setComment] = useState<string>("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
   const inputRef = useRef<TextInput | null>(null);
   const { backgroundColor } = getColorScheme();
   const insets = useSafeAreaInsets();
@@ -76,6 +79,15 @@ const DetailedPost = () => {
     inputRef.current?.focus();
   }, []);
 
+  const handleDiscard = () => {
+    setShowDiscardModal(false);
+    remove();
+  };
+
+  const handleCancel = () => {
+    setShowDiscardModal(false);
+  };
+
   if (isLoading) {
     return (
       <View style={{ backgroundColor, flex: 1 }}>
@@ -101,6 +113,17 @@ const DetailedPost = () => {
       style={{ backgroundColor, flex: 1 }}
     >
       <StatusBar backgroundColor={"#FF5700"} />
+
+      <ModalBox
+        showDiscardModal={showDiscardModal}
+        handleDiscard={handleDiscard}
+        handleCancel={handleCancel}
+        title="Delete post?"
+        BodyText="Are you sure you want to delete this post?"
+        btnActionText="Delete"
+        btnCancelText="Cancel"
+      />
+
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -111,12 +134,9 @@ const DetailedPost = () => {
               }}
             >
               {session?.user.id === data.user_id && (
-                <Entypo
-                  onPress={() => remove()}
-                  name="trash"
-                  size={ms(22)}
-                  color="white"
-                />
+                <TouchableOpacity onPress={() => setShowDiscardModal(true)}>
+                  <Entypo name="trash" size={ms(22)} color="white" />
+                </TouchableOpacity>
               )}
 
               <AntDesign name="search1" size={ms(24)} color={"white"} />
@@ -172,6 +192,7 @@ const DetailedPost = () => {
             padding: s(5),
             fontSize: ms(16),
             borderRadius: ms(5),
+            marginBottom: isInputFocused ? 0 : vs(10),
           }}
         />
         {isInputFocused && (
