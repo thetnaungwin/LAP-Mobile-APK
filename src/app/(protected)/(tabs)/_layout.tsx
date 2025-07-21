@@ -1,10 +1,10 @@
 import React from "react";
 import { Link, Tabs } from "expo-router";
-import { AntDesign, Feather, Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { AntDesign, Feather, FontAwesome5 } from "@expo/vector-icons";
 import { ms, s } from "react-native-size-matters";
 import { useUser } from "@clerk/clerk-react";
 import { getColorScheme } from "../../../config/color";
-import { Image, Pressable } from "react-native";
+import { Image, Pressable, TouchableOpacity, Text } from "react-native";
 
 const TabLayout = () => {
   const { user } = useUser();
@@ -75,14 +75,28 @@ const TabLayout = () => {
       />
       <Tabs.Screen
         name="answers"
-        options={{
-          title: "Answers",
-          headerTintColor: "#FF5700",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome5 name="airbnb" size={ms(24)} color={color} />
+        options={({ navigation }) => ({
+          headerTitle: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text
+                style={{
+                  color: "#FF5700",
+                  fontSize: ms(18),
+                  fontWeight: "bold",
+                }}
+              >
+                Answers
+              </Text>
+            </TouchableOpacity>
           ),
-        }}
+          headerTintColor: "#FF5700",
+          tabBarStyle: { display: "none" },
+          tabBarIcon: ({ color }) => (
+            <FontAwesome5 name="airbnb" size={24} color={color} />
+          ),
+        })}
       />
+
       <Tabs.Screen
         name="inbox"
         options={{
