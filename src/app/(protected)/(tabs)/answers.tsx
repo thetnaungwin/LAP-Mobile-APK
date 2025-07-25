@@ -9,11 +9,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import * as Speech from "expo-speech";
 import { FontAwesome, Entypo } from "@expo/vector-icons";
 import { showMessage } from "react-native-flash-message";
 import { getColorScheme } from "../../../config/color";
+import { ms, s, vs } from "react-native-size-matters";
 
 const GeminiChat = () => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -22,8 +24,7 @@ const GeminiChat = () => {
   const { backgroundColor, textColor } = getColorScheme();
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Store env
-  const API_KEY = "";
+  const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_GEMINI_API_KEY;
 
   // Correct Gemini REST API endpoint and model name
   const fetchGemini = async (prompt: string) => {
@@ -44,6 +45,7 @@ const GeminiChat = () => {
     const data = await response.json();
     console.log("Gemini API response:", data);
     if (data.error) {
+      Alert.alert("Failed to connect!", data.error.message);
       throw new Error(data.error.message || "Gemini API error");
     }
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
@@ -132,17 +134,17 @@ const GeminiChat = () => {
         <TouchableOpacity style={styles.iconButton} onPress={toggleSpeech}>
           <FontAwesome
             name={isSpeaking ? "microphone-slash" : "microphone"}
-            size={24}
+            size={ms(22)}
             color="#000"
           />
         </TouchableOpacity>
         <TextInput
-          placeholder="Type a message"
+          placeholder="Ask anything"
           onChangeText={setUserInput}
           value={userInput}
           onSubmitEditing={sendMessage}
           style={styles.input}
-          placeholderTextColor="#000"
+          placeholderTextColor="#7A7A7A"
           editable={!loading}
         />
         <TouchableOpacity
@@ -150,10 +152,10 @@ const GeminiChat = () => {
           onPress={sendMessage}
           disabled={loading}
         >
-          <Entypo name="paper-plane" size={22} color="white" />
+          <Entypo name="paper-plane" size={ms(21)} color="white" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={clearMessages}>
-          <Entypo name="controller-stop" size={24} color="#000" />
+          <Entypo name="controller-stop" size={ms(22)} color="#000" />
         </TouchableOpacity>
       </View>
       {loading && (
@@ -167,38 +169,39 @@ const GeminiChat = () => {
 
 const styles = StyleSheet.create({
   messageContainer: {
-    marginVertical: 4,
-    marginHorizontal: 10,
-    padding: 10,
-    borderRadius: 10,
+    marginVertical: vs(4),
+    marginHorizontal: s(8),
+    padding: s(8),
+    borderRadius: s(7),
     maxWidth: "80%",
   },
   userMessageContainer: {
     alignSelf: "flex-end",
     backgroundColor: "#007AFF",
   },
-  messageText: { fontSize: 16 },
+  messageText: { fontSize: ms(16) },
   userMessage: { color: "white" },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: s(8),
   },
   input: {
     flex: 1,
-    padding: 10,
+    padding: s(8),
     backgroundColor: "lightgray",
     borderRadius: 10,
-    height: 45,
+    height: vs(38),
     color: "#000",
-    marginHorizontal: 8,
+    fontSize: ms(16),
+    marginHorizontal: s(6),
   },
   iconButton: {
-    padding: 10,
+    padding: s(8),
     backgroundColor: "lightgray",
     borderRadius: 25,
-    height: 45,
-    width: 45,
+    height: vs(38),
+    width: s(38),
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 2,

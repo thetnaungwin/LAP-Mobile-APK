@@ -6,6 +6,7 @@ export const Colors = {
     background: "#E8E8F0",
     barStyle: "dark-content",
     groupNameText: "#3A3B3C",
+    groupBox: "#FFF",
     modalBg: "#FFFFFF",
     profileModel: "#fff",
   },
@@ -14,6 +15,7 @@ export const Colors = {
     background: "#1E1E1E",
     barStyle: "light-content",
     groupNameText: "#FFF",
+    groupBox: "#23272F",
     modalBg: "#0B1215",
     profileModel: "#2A2A2A",
   },
@@ -30,6 +32,8 @@ export function getColorScheme() {
 
   const groupNameText = Colors[colorScheme ?? "light"].groupNameText;
 
+  const groupBoxColor = Colors[colorScheme ?? "light"].groupBox;
+
   const modalBg = Colors[colorScheme ?? "light"].modalBg;
 
   const profileMdColor = Colors[colorScheme ?? "light"].profileModel;
@@ -39,6 +43,7 @@ export function getColorScheme() {
     textColor,
     barStyle,
     groupNameText,
+    groupBoxColor,
     modalBg,
     profileMdColor,
   };

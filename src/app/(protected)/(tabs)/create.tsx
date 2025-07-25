@@ -127,7 +127,7 @@ const CreateScreen = () => {
       <View style={styles.headerContainer}>
         <AntDesign
           name="close"
-          size={ms(24)}
+          size={ms(26)}
           color={textColor}
           onPress={handleClosePress}
         />
@@ -157,7 +157,7 @@ const CreateScreen = () => {
                   <Image
                     // @ts-ignore
                     source={{ uri: group.image }}
-                    style={{ width: 20, height: 20, borderRadius: 10 }}
+                    style={{ width: s(20), height: vs(20), borderRadius: 10 }}
                   />
                   <Text style={{ fontWeight: "600" }}>{group.name}</Text>
                 </>
@@ -244,7 +244,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#115BCA",
     color: "#FFF",
     borderRadius: ms(16),
-    fontSize: ms(14),
+    fontSize: ms(16),
   },
   titleInput: {
     fontSize: ms(20),

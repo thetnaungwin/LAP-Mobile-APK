@@ -39,7 +39,7 @@ const TabLayout = () => {
           </Link>
         ),
         headerStyle: { backgroundColor: backgroundColor },
-        tabBarStyle: { backgroundColor, borderTopColor: backgroundColor },
+        tabBarStyle: { backgroundColor, borderTopWidth: 0 },
       }}
     >
       <Tabs.Screen

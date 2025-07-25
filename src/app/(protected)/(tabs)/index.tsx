@@ -30,7 +30,7 @@ const HomeScreen = () => {
 
   const baseTabBarStyle = {
     backgroundColor,
-    borderTopColor: backgroundColor,
+    borderTopWidth: 0,
   };
 
   useEffect(() => {
