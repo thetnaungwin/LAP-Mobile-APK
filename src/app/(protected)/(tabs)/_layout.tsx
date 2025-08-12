@@ -5,10 +5,11 @@ import { ms, s } from "react-native-size-matters";
 import { useUser } from "@clerk/clerk-react";
 import { getColorScheme } from "../../../config/color";
 import { Image, Pressable, TouchableOpacity, Text } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 const TabLayout = () => {
   const { user } = useUser();
-  const { backgroundColor } = getColorScheme();
+  const { backgroundColor, textColor } = getColorScheme();
 
   return (
     <Tabs
@@ -77,16 +78,11 @@ const TabLayout = () => {
         name="answers"
         options={({ navigation }) => ({
           headerTitle: () => (
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text
-                style={{
-                  color: "#FF5700",
-                  fontSize: ms(18),
-                  fontWeight: "bold",
-                }}
-              >
-                Answers
-              </Text>
+            <TouchableOpacity
+              style={{ flexDirection: "row", gap: 10 }}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="chevron-back" size={ms(24)} color={textColor} />
             </TouchableOpacity>
           ),
           headerTintColor: "#FF5700",

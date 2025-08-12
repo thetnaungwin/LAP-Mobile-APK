@@ -14,7 +14,7 @@ import { getColorScheme } from "../../../config/color";
 import { updateJoinedGroup } from "../../../services/userService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchGroups } from "../../../services/groupService";
-import { s, vs } from "react-native-size-matters";
+import { ms, s, vs } from "react-native-size-matters";
 
 const CommunitiesScreen = () => {
   const supabase = useSupabase();
@@ -107,6 +107,7 @@ const CommunitiesScreen = () => {
                   style={{
                     color: isJoined ? "#aaa" : "#fff",
                     fontWeight: "bold",
+                    fontSize: ms(14),
                   }}
                 >
                   {isPending && joiningId === item.id
@@ -121,12 +122,12 @@ const CommunitiesScreen = () => {
         }}
         ListEmptyComponent={
           <Text
-            style={{ textAlign: "center", marginTop: 40, color: textColor }}
+            style={{ textAlign: "center", marginTop: vs(20), color: textColor }}
           >
             No groups found.
           </Text>
         }
-        contentContainerStyle={{ paddingBottom: 30 }}
+        contentContainerStyle={{ paddingBottom: vs(28) }}
       />
     </View>
   );
@@ -144,35 +145,35 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
+    borderRadius: s(15),
+    padding: s(12),
+    marginBottom: vs(12),
     shadowColor: "#000",
     shadowOpacity: 0.07,
     shadowRadius: 8,
     elevation: 2,
   },
   groupImage: {
-    width: 54,
-    height: 54,
+    width: s(50),
+    height: s(50),
     borderRadius: 27,
     backgroundColor: "#eee",
   },
   groupName: {
-    fontSize: 17,
+    fontSize: ms(16),
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: vs(4),
   },
   groupDesc: {
-    fontSize: 13,
+    fontSize: ms(13),
     color: "#bbb",
   },
   joinButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    marginLeft: 10,
+    paddingVertical: vs(7),
+    paddingHorizontal: s(16),
+    borderRadius: s(10),
+    marginLeft: s(10),
   },
   joinedButton: {
     backgroundColor: "#ddd",
