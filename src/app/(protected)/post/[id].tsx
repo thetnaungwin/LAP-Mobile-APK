@@ -141,11 +141,19 @@ const DetailedPost = () => {
 
               <AntDesign name="search1" size={ms(24)} color={"white"} />
               <MaterialIcons name="sort" size={ms(24)} color={"white"} />
-              <Entypo
-                name="dots-three-horizontal"
-                size={ms(24)}
-                color={"white"}
-              />
+              {session?.user.id === data.user_id && (
+                <Entypo
+                  onPress={() =>
+                    router.replace({
+                      pathname: "create",
+                      params: { data: JSON.stringify(data) },
+                    })
+                  }
+                  name="dots-three-horizontal"
+                  size={ms(24)}
+                  color={"white"}
+                />
+              )}
             </View>
           ),
         }}

@@ -10,14 +10,14 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getColorScheme } from "../../../config/color";
 import { AntDesign, Feather } from "@expo/vector-icons";
 import { ms, s, vs } from "react-native-size-matters";
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { insertPost } from "../../../services/postService";
+import { insertPost, updatePost } from "../../../services/postService";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../../store/store";
 import { setGroup } from "../../../store/slices/groupSlice";
@@ -25,6 +25,7 @@ import { useSupabase } from "../../../config/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { uploadImage } from "../../../services/supabaseImage";
 import ModalBox from "../../../component/ModalBox";
+import SupabaseImage from "../../../component/SupabaseImage";
 
 const CreateScreen = () => {
   const { backgroundColor, textColor } = getColorScheme();
@@ -37,39 +38,67 @@ const CreateScreen = () => {
   const [bodyText, setBodyText] = useState<string>("");
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const group = useSelector((state: RootState) => state.group.group);
+  const { data }: any = useLocalSearchParams();
+  const parsedData = data ? JSON.parse(data) : [];
+
+  useEffect(() => {
+    if (parsedData && Object.keys(parsedData).length > 0) {
+      setTitle(parsedData.title || "");
+      setBodyText(parsedData.description || "");
+      setImage(parsedData.image || null);
+      dispatch(setGroup(parsedData.group || null));
+    }
+  }, []);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (image: string | undefined) => {
-      if (!group) {
-        throw new Error("Please select a group");
+    mutationFn: async (image: string | null | undefined) => {
+      const payload = {
+        title,
+        description: bodyText,
+        group_id: group?.id,
+        image, // null will remove image
+      };
+
+      if (!parsedData || parsedData.length === 0) {
+        // @ts-ignore
+        return await insertPost(payload, supabase);
+      } else {
+        return await updatePost(parsedData.id, payload, supabase);
       }
-      if (!title) {
-        throw new Error("Title is required");
-      }
-      return insertPost(
-        {
-          title,
-          description: bodyText,
-          group_id: group?.id,
-          image,
-        },
-        supabase
-      );
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      goBack();
+      if (!parsedData || parsedData.length === 0) {
+        goBack();
+      } else {
+        router.replace(`/post/${parsedData.id}`);
+        dispatch(setGroup(null));
+      }
     },
     onError: (error) => {
-      Alert.alert("Failed to insert post", error.message);
+      Alert.alert("Failed to save post", error.message);
     },
   });
 
   const onPostClick = async () => {
-    let imagePath = image ? await uploadImage(image, supabase) : undefined;
+    try {
+      let imagePath: string | null | undefined;
 
-    mutate(imagePath);
-    setImage(null);
+      if (image && image.startsWith("file://")) {
+        // New image picked
+        imagePath = await uploadImage(image, supabase);
+      } else if (image === null) {
+        // Image removed by user
+        imagePath = null;
+      } else {
+        // Keep existing image
+        imagePath = parsedData?.image || null;
+      }
+
+      mutate(imagePath); // call your existing mutation
+    } catch (err: any) {
+      console.log("Save failed:", err.message);
+    }
   };
 
   const goBack = () => {
@@ -95,8 +124,16 @@ const CreateScreen = () => {
   };
 
   const handleClosePress = () => {
-    if (title || bodyText || group || image) setShowDiscardModal(true);
-    else goBack();
+    if (!parsedData || parsedData.length === 0) {
+      if (title || bodyText || group || image) {
+        setShowDiscardModal(true);
+      } else {
+        goBack();
+      }
+    } else {
+      router.replace(`/post/${parsedData.id}`);
+      dispatch(setGroup(null));
+    }
   };
 
   const handleDiscard = () => {
@@ -137,7 +174,11 @@ const CreateScreen = () => {
           disabled={isPending}
         >
           <Text style={styles.postText}>
-            {isPending ? "Posting..." : "Post"}
+            {!parsedData || parsedData.length === 0
+              ? isPending
+                ? "Posting..."
+                : "Post"
+              : "Update"}
           </Text>
         </Pressable>
       </View>
@@ -196,10 +237,25 @@ const CreateScreen = () => {
                   borderRadius: ms(20),
                 }}
               />
-              <Image
-                source={{ uri: image }}
-                style={{ width: "100%", aspectRatio: 1 }}
-              />
+
+              {image.startsWith("file://") ? (
+                // Local image from ImagePicker
+                <Image
+                  source={{ uri: image }}
+                  style={{ width: "100%", aspectRatio: 1 }}
+                />
+              ) : (
+                // Supabase image from DB
+                <SupabaseImage
+                  path={image}
+                  bucket="image"
+                  style={{
+                    width: "100%",
+                    aspectRatio: 4 / 3,
+                    borderRadius: ms(15),
+                  }}
+                />
+              )}
             </View>
           )}
           <TextInput

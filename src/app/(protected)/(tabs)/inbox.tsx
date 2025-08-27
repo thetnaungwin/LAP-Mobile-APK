@@ -22,9 +22,25 @@ const InboxScreen = () => {
           About This App
         </Text>
         <Text style={[styles.aboutText, { color: textColor }]}>
-          This app is a Reddit clone built to replicate the core features of
+          This app is a LAPSocial mobile app to replicate the core features of
           Reddit — communities, posts, comments, and real-time interactions.
         </Text>
+        <Text style={[styles.aboutText, { color: textColor }]}>
+          Premium Subscribers enjoy exclusive features including:
+        </Text>
+        <Text style={[styles.aboutText, { color: textColor }]}>
+          • Ad-free experience{"\n"}• Access to exclusive communities{"\n"}•
+          Ability to create and manage their own groups{"\n"}• Ability to
+          schedule posts{"\n"}• Highlighted posts and priority support{"\n"}•
+          Early access to new features
+        </Text>
+        <Text
+          style={[styles.aboutText, { color: textColor, fontWeight: "600" }]}
+        >
+          Contact LAPSocialModeratorteam@gmail.com to become a Premium
+          Subscriber.
+        </Text>
+
         <Text style={[styles.version, { color: textColor }]}>
           App Version: {appVersion}
         </Text>

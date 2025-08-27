@@ -96,6 +96,26 @@ export const insertPost = async (
   }
 };
 
+export const updatePost = async (
+  id: string,
+  post: any,
+  supabase: SupabaseClient<Database>
+) => {
+  const { data, error } = await supabase
+    .from("posts")
+    .update(post)
+    .eq("id", id)
+    .select();
+
+  if (error) throw error;
+
+  if (!data || data.length === 0) {
+    throw new Error("No post found to update");
+  }
+
+  return data[0];
+};
+
 export const deletePost = async (
   id: string,
   supabase: SupabaseClient<Database>
