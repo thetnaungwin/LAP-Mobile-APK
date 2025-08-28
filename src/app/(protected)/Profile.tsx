@@ -18,25 +18,58 @@ import { useDispatch } from "react-redux";
 import { logout } from "../../store/slices/authSlice";
 import ModalBox from "../../component/ModalBox";
 import { ms, s, vs } from "react-native-size-matters";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchPostByUserId } from "../../services/postService";
 import { useSupabase } from "../../config/supabase";
+import { fetchGroups } from "../../services/groupService";
+import { useQueryClient } from "@tanstack/react-query";
+import { leaveGroup } from "../../services/userService";
 
 const { width } = Dimensions.get("window");
 
 const Profile = () => {
-  const [tab, setTab] = useState<"Posts" | "Comments" | "About">("Posts");
+  const [tab, setTab] = useState<"Posts" | "Communities" | "About">("Posts");
   const { backgroundColor, profileMdColor, textColor } = getColorScheme();
   const { signOut } = useAuth();
   const { user } = useUser();
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const dispatch = useDispatch();
   const supabase = useSupabase();
+  const queryClient = useQueryClient();
+  const [leavingGroupId, setLeavingGroupId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["posts", user?.id],
     // @ts-ignore
     queryFn: () => fetchPostByUserId(user.id, supabase),
+  });
+
+  const {
+    data: groups,
+    isLoading: loadGroups,
+    error,
+  } = useQuery({
+    queryKey: ["groups", user?.id],
+    // @ts-ignore
+    queryFn: () => fetchGroups(user?.id, searchValue, supabase),
+    staleTime: 10_000,
+    placeholderData: (previousData) => previousData,
+  });
+
+  const { mutate: leaveGroupMutation } = useMutation({
+    // @ts-ignore
+    mutationFn: (groupId: string) => leaveGroup(user?.id, groupId, supabase),
+    onMutate: (groupId) => {
+      setLeavingGroupId(groupId);
+    },
+    onSettled: () => {
+      setLeavingGroupId(null);
+    },
+    onSuccess: (_data, groupId) => {
+      queryClient.setQueryData(["groups", user?.id], (old: any) =>
+        old ? old.filter((g: any) => g.id !== groupId) : []
+      );
+    },
   });
 
   const handleClose = () => {
@@ -117,7 +150,7 @@ const Profile = () => {
         </View>
         {/* Tabs */}
         <View style={styles.tabs}>
-          {["Posts", "Comments", "About"].map((t) => (
+          {["Posts", "Communities", "About"].map((t) => (
             <TouchableOpacity
               key={t}
               onPress={() => setTab(t as any)}
@@ -159,13 +192,70 @@ const Profile = () => {
                 )}
               />
             ))}
-          {tab === "Comments" && (
-            <Text style={styles.placeholder}>No comments yet.</Text>
+          {tab === "Communities" && (
+            <FlatList
+              style={{
+                height: "50%",
+                overflow: "hidden",
+              }}
+              data={groups}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    backgroundColor: "#f6f7f8",
+                    borderRadius: ms(12),
+                    marginBottom: vs(14),
+                    padding: s(8),
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 4,
+                    elevation: 1,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Image
+                      source={{
+                        uri: item.image != null ? item.image : undefined,
+                      }}
+                      style={{
+                        width: s(40),
+                        aspectRatio: 1,
+                        borderRadius: ms(20),
+                        marginRight: 10,
+                      }}
+                    />
+                    <Text style={styles.postTitle}>{item.name}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: "#FF5700",
+                      paddingVertical: 6,
+                      paddingHorizontal: 14,
+                      borderRadius: 20,
+                      opacity: leavingGroupId === item.id ? 0.6 : 1,
+                    }}
+                    onPress={() => leaveGroupMutation(item.id)}
+                    disabled={leavingGroupId === item.id}
+                  >
+                    <Text style={{ color: "white", fontWeight: "600" }}>
+                      {leavingGroupId === item.id ? "Leaving..." : "Leave"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
           )}
           {tab === "About" && (
             <View>
               <Text style={[{ ...styles.bio, color: textColor }]}>
-                This is your Reddit bio. Edit it to tell people about yourself!
+                This is your LAPSocial app bio. Edit it to tell people about
+                yourself!
               </Text>
             </View>
           )}

@@ -58,3 +58,42 @@ export const updateJoinedGroup = async (
     throw updateError;
   }
 };
+export const leaveGroup = async (
+  userId: string,
+  groupId: string,
+  supabase: SupabaseClient
+) => {
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("joinedgroup")
+    .eq("user_id", userId)
+    .single();
+
+  if (userError) {
+    console.error("Failed to fetch user:", userError);
+    throw userError;
+  }
+
+  const currentGroups: string[] = userData?.joinedgroup ?? [];
+
+  // Normalize both sides
+  const updatedGroups = currentGroups.filter(
+    (id) => String(id) !== String(groupId)
+  );
+
+  if (updatedGroups.length === currentGroups.length) {
+    console.log("User was not part of this group, nothing to remove.");
+  }
+
+  const { error: updateError } = await supabase
+    .from("users")
+    .update({ joinedgroup: updatedGroups })
+    .eq("user_id", userId);
+
+  if (updateError) {
+    console.error("Leave group failed:", updateError);
+    throw updateError;
+  }
+
+  return { success: true };
+};
