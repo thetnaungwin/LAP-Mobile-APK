@@ -73,6 +73,15 @@ const DetailedPost = () => {
     },
   });
 
+  // wrapped handler
+  const handleCreateComment = () => {
+    if (!comment.trim()) {
+      Alert.alert("Empty Comment", "Please enter a comment before submitting.");
+      return;
+    }
+    createComment();
+  };
+
   const handleReplyBtnPressed = useCallback((commentId: string) => {
     console.log("Replying to comment:", commentId);
     setReplyToId(commentId);
@@ -205,7 +214,7 @@ const DetailedPost = () => {
         />
         {isInputFocused && (
           <Pressable
-            onPress={() => createComment()}
+            onPress={() => handleCreateComment()}
             style={{
               backgroundColor: "#0d469b",
               borderRadius: ms(15),
