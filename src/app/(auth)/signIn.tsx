@@ -18,13 +18,12 @@ import { s, vs, ms } from "react-native-size-matters";
 import { Feather } from "@expo/vector-icons";
 import { getColorScheme } from "../../config/color";
 import { useDispatch } from "react-redux";
-import { setLoggedIn } from "../../store/slices/authSlice";
+import {  setLoggedIn } from "../../store/slices/authSlice";
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const dispatch = useDispatch();
-
   const [emailAddress, setEmailAddress] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [secureText, setSecureText] = useState<boolean>(true);

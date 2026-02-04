@@ -4,17 +4,56 @@ import { AntDesign, Feather, FontAwesome5 } from "@expo/vector-icons";
 import { ms, s } from "react-native-size-matters";
 import { useUser } from "@clerk/clerk-react";
 import { getColorScheme } from "../../../config/color";
-import { Image, Pressable, TouchableOpacity, Text } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, TouchableOpacity, useColorScheme } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BlurView } from "expo-blur";
 
 const TabLayout = () => {
   const { user } = useUser();
   const { backgroundColor, textColor } = getColorScheme();
+  const colorScheme = useColorScheme();
+  const isIOS = Platform.OS === "ios";
+  const blurTint = colorScheme === "dark" ? "dark" : "light";
+
+  // On iOS, position: 'absolute' is required for BlurView to work (content must scroll behind the bar)
+  const tabBarStyle = isIOS
+    ? {
+        position: "absolute" as const,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "transparent",
+        borderTopWidth: 0,
+      }
+    : { backgroundColor, borderTopWidth: 0 };
+
+  const headerStyle = isIOS
+    ? { backgroundColor: "transparent" }
+    : { backgroundColor };
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#FF5700",
+        tabBarStyle,
+        ...(isIOS && {
+          tabBarBackground: () => (
+            <BlurView
+              intensity={90}
+              tint={blurTint}
+              style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}
+            />
+          ),
+          headerTransparent: true,
+          headerBackground: () => (
+            <BlurView
+              intensity={80}
+              tint={blurTint}
+              style={StyleSheet.absoluteFill}
+            />
+          ),
+        }),
+        headerStyle,
         headerRight: () => (
           <Link href={"Profile"} asChild>
             <Pressable>
@@ -39,14 +78,13 @@ const TabLayout = () => {
             </Pressable>
           </Link>
         ),
-        headerStyle: { backgroundColor: backgroundColor },
-        tabBarStyle: { backgroundColor, borderTopWidth: 0 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "LAP",
+          headerTitleAlign:"left",
           headerTitle: "LAP",
           headerTintColor: "#FF5700",
           tabBarIcon: ({ color }) => (
@@ -58,6 +96,7 @@ const TabLayout = () => {
         name="communities"
         options={{
           title: "Communities",
+          headerTitleAlign:"left",
           headerTintColor: "#FF5700",
           tabBarIcon: ({ color }) => (
             <Feather name="users" size={ms(24)} color={color} />
@@ -85,11 +124,23 @@ const TabLayout = () => {
               <Ionicons name="chevron-back" size={ms(24)} color={textColor} />
             </TouchableOpacity>
           ),
+          headerTitleAlign: "left",
           headerTintColor: "#FF5700",
           tabBarStyle: { display: "none" },
           tabBarIcon: ({ color }) => (
             <FontAwesome5 name="airbnb" size={24} color={color} />
           ),
+          // Ensure glass header on iOS (same as other tabs)
+          ...(isIOS && {
+            headerTransparent: true,
+            headerBackground: () => (
+              <BlurView
+                intensity={80}
+                tint={blurTint}
+                style={StyleSheet.absoluteFill}
+              />
+            ),
+          }),
         })}
       />
 
@@ -97,6 +148,7 @@ const TabLayout = () => {
         name="inbox"
         options={{
           title: "Inbox",
+          headerTitleAlign:"left",
           headerTintColor: "#FF5700",
           tabBarIcon: ({ color }) => (
             <Feather name="bell" size={ms(24)} color={color} />

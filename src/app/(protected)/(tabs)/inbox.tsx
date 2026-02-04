@@ -1,11 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { getColorScheme } from "../../../config/color";
+import { useTabHeaderPadding } from "../../../hooks/useTabHeaderPadding";
 import Constants from "expo-constants";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ms, s, vs } from "react-native-size-matters";
 
 const InboxScreen = () => {
+  const topPadding = useTabHeaderPadding();
   const { backgroundColor, groupBoxColor, textColor } = getColorScheme();
   const appVersion = Constants.manifest.version || "1.0.0"; // fallback
 
@@ -13,7 +15,10 @@ const InboxScreen = () => {
     <View style={[styles.container, { backgroundColor }]}>
       <ScrollView
         style={[styles.aboutSection, { backgroundColor: groupBoxColor }]}
-        contentContainerStyle={{ paddingBottom: vs(20) }}
+        contentContainerStyle={{
+          paddingTop: topPadding,
+          paddingBottom: vs(20),
+        }}
       >
         <View style={styles.iconContainer}>
           <MaterialIcons name="info-outline" size={ms(40)} color={textColor} />

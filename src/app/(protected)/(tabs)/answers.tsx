@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,22 +7,50 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Alert,
+  useColorScheme,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import * as Speech from "expo-speech";
 import { FontAwesome, Entypo } from "@expo/vector-icons";
 import { showMessage } from "react-native-flash-message";
 import { getColorScheme } from "../../../config/color";
+import { useTabHeaderPadding } from "../../../hooks/useTabHeaderPadding";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ms, s, vs } from "react-native-size-matters";
+
+const ACCENT = "#FF5700";
 
 const GeminiChat = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [userInput, setUserInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const { backgroundColor, textColor } = getColorScheme();
+  const topPadding = useTabHeaderPadding();
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const { backgroundColor, textColor, groupBoxColor } = getColorScheme();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const inputBottomPadding = Math.max(insets.bottom, s(8));
+  const isIOS = Platform.OS === "ios";
+  const blurTint = colorScheme === "dark" ? "dark" : "light";
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardHeight(0)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_GEMINI_API_KEY;
 
@@ -30,7 +58,7 @@ const GeminiChat = () => {
   const fetchGemini = async (prompt: string) => {
     const apiKey = API_KEY;
     const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" +
       apiKey;
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -119,51 +147,83 @@ const GeminiChat = () => {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <View style={{ flex: 1, backgroundColor }}>
       <FlatList
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
         inverted
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "flex-end" }}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "flex-end",
+          paddingTop: topPadding,
+          paddingBottom: vs(8) + vs(38) + vs(8) + (Platform.OS === "ios" ? 34 : -100),
+        }}
       />
-      <View style={[{ ...styles.inputContainer, backgroundColor }]}>
-        <TouchableOpacity style={styles.iconButton} onPress={toggleSpeech}>
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: isIOS ? "transparent" : groupBoxColor,
+            borderTopColor: backgroundColor,
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: keyboardHeight,
+            paddingBottom: inputBottomPadding,
+            overflow: "hidden",
+          },
+        ]}
+      >
+        {isIOS && (
+          <BlurView
+            intensity={90}
+            tint={blurTint}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+        <View style={styles.inputRow}>
+        <TouchableOpacity
+          style={[styles.iconButton, { backgroundColor: isIOS ? "rgba(255,255,255,0.3)" : backgroundColor }]}
+          onPress={toggleSpeech}
+        >
           <FontAwesome
             name={isSpeaking ? "microphone-slash" : "microphone"}
-            size={ms(22)}
-            color="#000"
+            size={ms(20)}
+            color={textColor}
           />
         </TouchableOpacity>
         <TextInput
-          placeholder="Ask anything"
+          placeholder="Ask anything..."
           onChangeText={setUserInput}
           value={userInput}
           onSubmitEditing={sendMessage}
-          style={styles.input}
-          placeholderTextColor="#7A7A7A"
+          style={[styles.input, { backgroundColor: isIOS ? "rgba(255,255,255,0.25)" : backgroundColor, color: textColor }]}
+          placeholderTextColor="#888"
           editable={!loading}
         />
         <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: "#007AFF" }]}
+          style={[styles.iconButton, styles.sendButton]}
           onPress={sendMessage}
           disabled={loading}
         >
-          <Entypo name="paper-plane" size={ms(21)} color="white" />
+          <Entypo name="paper-plane" size={ms(20)} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={clearMessages}>
-          <Entypo name="controller-stop" size={ms(22)} color="#000" />
+        <TouchableOpacity
+          style={[styles.iconButton, { backgroundColor: isIOS ? "rgba(255,255,255,0.3)" : backgroundColor }]}
+          onPress={clearMessages}
+        >
+          <Entypo name="controller-stop" size={ms(20)} color={textColor} />
         </TouchableOpacity>
+        </View>
       </View>
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#007AFF" />
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -182,29 +242,32 @@ const styles = StyleSheet.create({
   messageText: { fontSize: ms(16) },
   userMessage: { color: "white" },
   inputContainer: {
+    paddingHorizontal: s(12),
+    paddingTop: vs(10),
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: s(8),
   },
   input: {
     flex: 1,
-    padding: s(8),
-    backgroundColor: "lightgray",
-    borderRadius: 10,
-    height: vs(38),
-    color: "#000",
+    paddingHorizontal: s(14),
+    paddingVertical: vs(10),
+    borderRadius: ms(22),
+    height: vs(44),
     fontSize: ms(16),
-    marginHorizontal: s(6),
+    marginHorizontal: s(8),
   },
   iconButton: {
-    padding: s(8),
-    backgroundColor: "lightgray",
-    borderRadius: 25,
-    height: vs(38),
-    width: s(38),
+    borderRadius: ms(22),
+    height: vs(44),
+    width: vs(44),
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 2,
+  },
+  sendButton: {
+    backgroundColor: ACCENT,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

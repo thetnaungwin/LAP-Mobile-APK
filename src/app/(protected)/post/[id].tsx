@@ -118,7 +118,7 @@ const DetailedPost = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={insets.top + 10}
+      keyboardVerticalOffset={insets.top + 20}
       style={{ backgroundColor, flex: 1 }}
     >
       <StatusBar backgroundColor={"#FF5700"} />
@@ -198,6 +198,7 @@ const DetailedPost = () => {
       >
         <TextInput
           placeholder="Join the conversation"
+          placeholderTextColor={"#454343"}
           value={comment}
           onChangeText={setComment}
           onFocus={() => setIsInputFocused(true)}

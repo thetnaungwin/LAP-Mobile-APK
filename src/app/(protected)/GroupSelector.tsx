@@ -68,21 +68,21 @@ const GroupSelector = () => {
   if (isLoading) {
     return (
       <View style={{ backgroundColor, flex: 1 }}>
-        <ActivityIndicator />
+        <ActivityIndicator style={{marginTop:vs(60)}} />
       </View>
     );
   }
   if (error) {
     return (
       <View style={{ backgroundColor, flex: 1 }}>
-        <Text style={{ color: textColor }}>Error fetching groups!</Text>
+        <Text style={{ color: textColor, marginTop:vs(60) }}>Error fetching groups!</Text>
       </View>
     );
   }
 
   return (
     <SafeAreaView
-      style={{ backgroundColor, flex: 1, paddingHorizontal: s(15) }}
+      style={{ backgroundColor, flex: 1}}
     >
       <View style={styles.container}>
         <AntDesign
@@ -109,6 +109,7 @@ const GroupSelector = () => {
 
       <FlatList
         data={isConnected ? data : offlineFilteredGroups}
+        style={{marginHorizontal:s(10)}}
         renderItem={({ item }) => (
           <Pressable
             onPress={() => onGroupSelected(item)}
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal:s(10)
   },
   postToText: {
     fontSize: ms(16),
@@ -145,6 +147,7 @@ const styles = StyleSheet.create({
     borderRadius: ms(5),
     gap: 5,
     marginVertical: vs(10),
+    marginHorizontal:s(10),
     alignItems: "center",
     paddingHorizontal: s(5),
   },

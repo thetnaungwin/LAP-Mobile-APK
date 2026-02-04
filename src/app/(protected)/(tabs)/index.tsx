@@ -4,6 +4,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Text,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import PostListItem from "../../../component/PostListItem";
@@ -16,11 +17,15 @@ import { getPost } from "../../../store/slices/postSlice";
 import NetInfo from "@react-native-community/netinfo";
 import { useSupabase } from "../../../config/supabase";
 import { useNavigation } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useSession } from "@clerk/clerk-expo";
+import { useTabHeaderPadding } from "../../../hooks/useTabHeaderPadding";
 
 const HomeScreen = () => {
   const supabase = useSupabase();
   const navigation = useNavigation();
+  const tabBarHeight = useBottomTabBarHeight();
+  const topPadding = useTabHeaderPadding();
   const lastOffset = useRef(0);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const { backgroundColor, barStyle } = getColorScheme();
@@ -28,10 +33,17 @@ const HomeScreen = () => {
   const dispatch = useDispatch();
   const { session, isLoaded } = useSession();
 
-  const baseTabBarStyle = {
-    backgroundColor,
-    borderTopWidth: 0,
-  };
+  const baseTabBarStyle =
+    Platform.OS === "ios"
+      ? {
+          position: "absolute" as const,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "transparent" as const,
+          borderTopWidth: 0,
+        }
+      : { backgroundColor, borderTopWidth: 0 };
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -129,6 +141,10 @@ const HomeScreen = () => {
         data={!isConnected ? postData : posts}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: topPadding,
+          paddingBottom: Platform.OS === "ios" ? (tabBarHeight ?? 0) + 16 : 16,
+        }}
         renderItem={({ item }) => <PostListItem post={item} />}
         onRefresh={refetch}
         refreshing={isRefetching}
