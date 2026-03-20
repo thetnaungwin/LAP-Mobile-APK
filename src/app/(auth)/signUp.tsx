@@ -302,6 +302,14 @@ export default function SignUpScreen() {
               <Text style={styles.buttonText}>Sign Up</Text>
             </TouchableOpacity>
           )}
+          <Text style={[{ color: textColor, marginTop: vs(15) }]}>
+            Already have an account?{" "}
+            <Text
+              style={{ color: "#158CF0", fontWeight: "600" }} onPress={() => router.push("/(auth)/signIn")}
+            >
+              Sign In
+            </Text>
+          </Text>
 
           <Text style={styles.footerText}>
             Copyright © Lucky and Power 2025-2026. LAP Test (v.0.0.01)
