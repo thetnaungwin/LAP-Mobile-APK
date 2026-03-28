@@ -24,30 +24,38 @@ const InboxScreen = () => {
           <MaterialIcons name="info-outline" size={ms(40)} color={textColor} />
         </View>
         <Text style={[styles.aboutTitle, { color: textColor }]}>
-          About This App
+          Inbox
         </Text>
         <Text style={[styles.aboutText, { color: textColor }]}>
-          This app is a LAPSocial mobile app to replicate the core features of
-          Reddit — communities, posts, comments, and real-time interactions.
+          Stay up to date with replies, mentions, and important account updates.
         </Text>
         <Text style={[styles.aboutText, { color: textColor }]}>
-          Premium Subscribers enjoy exclusive features including:
+          New this week
         </Text>
         <Text style={[styles.aboutText, { color: textColor }]}>
-          • Ad-free experience{"\n"}• Access to exclusive communities{"\n"}•
-          Ability to create and manage their own groups{"\n"}• Ability to
-          schedule posts{"\n"}• Highlighted posts and priority support{"\n"}•
-          Early access to new features
+          • You joined `r/technology` successfully.{"\n"}• Alex replied to your
+          post: "Great point, thanks for sharing."{"\n"}• Your post in
+          `r/mobiledev` reached 120 upvotes.{"\n"}• Community guidelines were
+          updated for `r/startups`.{"\n"}• Security notice: login from iPhone
+          15 Pro, Yangon (2 hours ago).
+        </Text>
+        <Text style={[styles.aboutText, { color: textColor }]}>
+          Premium updates
         </Text>
         <Text
           style={[styles.aboutText, { color: textColor, fontWeight: "600" }]}
         >
-          Contact LAPSocialModeratorteam@gmail.com to become a Premium
-          Subscriber.
+          • AI Chat is now Premium only.{"\n"}• Premium members get priority
+          support and early feature access.
+        </Text>
+        <Text
+          style={[styles.aboutText, { color: textColor, fontWeight: "600" }]}
+        >
+          Need help? Contact support at lapsocialmoderator@gmail.com
         </Text>
 
         <Text style={[styles.version, { color: textColor }]}>
-          App Version: {appVersion}
+          LAPSocial v{appVersion}
         </Text>
       </ScrollView>
     </View>

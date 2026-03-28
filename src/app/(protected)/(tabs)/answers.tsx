@@ -19,7 +19,12 @@ import { showMessage } from "react-native-flash-message";
 import { getColorScheme } from "../../../config/color";
 import { useTabHeaderPadding } from "../../../hooks/useTabHeaderPadding";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useUser } from "@clerk/clerk-react";
+import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { ms, s, vs } from "react-native-size-matters";
+import { useSupabase } from "../../../config/supabase";
+import { fetchPremiumStatus } from "../../../services/premiumService";
 
 const ACCENT = "#FF5700";
 
@@ -36,6 +41,18 @@ const GeminiChat = () => {
   const inputBottomPadding = Math.max(insets.bottom, s(8));
   const isIOS = Platform.OS === "ios";
   const blurTint = colorScheme === "dark" ? "dark" : "light";
+  const { user, isLoaded: userLoaded } = useUser();
+  const supabase = useSupabase();
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const { data: premiumFromDb, isLoading: premiumLoading } = useQuery({
+    queryKey: ["premium", user?.id],
+    enabled: userLoaded && !!user?.id,
+    queryFn: () => fetchPremiumStatus(user!.id, supabase),
+    staleTime: 30_000,
+  });
+
+  const isPremium = !!premiumFromDb;
 
   useEffect(() => {
     const showSub = Keyboard.addListener(
@@ -81,6 +98,11 @@ const GeminiChat = () => {
 
   const sendMessage = async () => {
     if (!userInput.trim()) return;
+    if (premiumLoading) return;
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
     setLoading(true);
     const userMessage = {
       text: userInput,
@@ -223,6 +245,46 @@ const GeminiChat = () => {
           <ActivityIndicator size="large" color="#007AFF" />
         </View>
       )}
+
+      {showPaywall && (
+        <View style={styles.paywallOverlay} pointerEvents="box-none">
+          {isIOS && (
+            <BlurView
+              intensity={95}
+              tint={blurTint}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <View style={[styles.paywallCard, { backgroundColor: groupBoxColor }]}>
+      
+            <Text style={[styles.paywallTitle, { color: textColor }]}>
+              Premium required
+            </Text>
+            <Text style={[styles.paywallText, { color: textColor }]}>
+              Unlock unlimited AI chats and faster responses.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.paywallUpgradeButton}
+              onPress={() => {
+                setShowPaywall(false);
+                router.push("/Premium");
+              }}
+            >
+              <Text style={styles.paywallUpgradeButtonText}>Upgrade to Premium</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.paywallCancelButton}
+              onPress={() => setShowPaywall(false)}
+            >
+              <Text style={[styles.paywallCancelText, { color: textColor }]}>
+                Not now
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -274,6 +336,68 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.2)",
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  paywallOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  paywallCard: {
+    width: "90%",
+    borderRadius: ms(18),
+    padding: s(16),
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+  },
+  paywallCloseButton: {
+    position: "absolute",
+    top: s(8),
+    right: s(10),
+    height: vs(36),
+    width: vs(36),
+    borderRadius: ms(18),
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  paywallTitle: {
+    fontSize: ms(22),
+    fontWeight: "800",
+    marginTop: vs(6),
+    marginBottom: vs(8),
+    textAlign: "center",
+  },
+  paywallText: {
+    fontSize: ms(15),
+    textAlign: "center",
+    lineHeight: ms(20),
+    marginBottom: vs(16),
+  },
+  paywallUpgradeButton: {
+    backgroundColor: ACCENT,
+    paddingVertical: vs(12),
+    borderRadius: ms(14),
+    alignItems: "center",
+    marginBottom: vs(10),
+  },
+  paywallUpgradeButtonText: {
+    color: "white",
+    fontWeight: "800",
+    fontSize: ms(16),
+  },
+  paywallCancelButton: {
+    paddingVertical: vs(10),
+    alignItems: "center",
+    borderRadius: ms(14),
+  },
+  paywallCancelText: {
+    fontSize: ms(15),
+    fontWeight: "700",
   },
 });
 

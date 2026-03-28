@@ -37,6 +37,8 @@ const CreateScreen = () => {
   const [image, setImage] = useState<string | null>(null);
   const [bodyText, setBodyText] = useState<string>("");
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [isPosting, setIsPosting] = useState(false); // 🔥 NEW: Instant UI lock
+
   const group = useSelector((state: RootState) => state.group.group);
   const { data }: any = useLocalSearchParams();
   const parsedData = data ? JSON.parse(data) : [];
@@ -56,7 +58,7 @@ const CreateScreen = () => {
         title,
         description: bodyText,
         group_id: group?.id,
-        image, // null will remove image
+        image,
       };
 
       if (!parsedData || parsedData.length === 0) {
@@ -66,8 +68,9 @@ const CreateScreen = () => {
         return await updatePost(parsedData.id, payload, supabase);
       }
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+
       if (!parsedData || parsedData.length === 0) {
         goBack();
       } else {
@@ -81,6 +84,9 @@ const CreateScreen = () => {
   });
 
   const onPostClick = async () => {
+    if (isPosting) return; // 🔥 Prevent rapid double-clicks instantly
+    setIsPosting(true);
+
     try {
       let imagePath: string | null | undefined;
 
@@ -95,9 +101,14 @@ const CreateScreen = () => {
         imagePath = parsedData?.image || null;
       }
 
-      mutate(imagePath); // call your existing mutation
+      mutate(imagePath, {
+        onSettled: () => {
+          setIsPosting(false); // 🔥 Unlock after server response
+        },
+      });
     } catch (err: any) {
       console.log("Save failed:", err.message);
+      setIsPosting(false);
     }
   };
 
@@ -168,17 +179,18 @@ const CreateScreen = () => {
           color={textColor}
           onPress={handleClosePress}
         />
+        {/* 🔥 Button disabled instantly with isPosting */}
         <Pressable
-          onPress={() => onPostClick()}
+          onPress={onPostClick}
           style={{ marginLeft: "auto" }}
-          disabled={isPending}
+          disabled={isPosting || isPending}
         >
           <Text style={styles.postText}>
-            {!parsedData || parsedData.length === 0
-              ? isPending
-                ? "Posting..."
-                : "Post"
-              : "Update"}
+            {isPosting || isPending
+              ? "Posting..."
+              : !parsedData || parsedData.length === 0
+                ? "Post"
+                : "Update"}
           </Text>
         </Pressable>
       </View>
@@ -227,15 +239,7 @@ const CreateScreen = () => {
                 size={ms(25)}
                 color="white"
                 onPress={() => setImage(null)}
-                style={{
-                  position: "absolute",
-                  zIndex: 1,
-                  right: s(10),
-                  top: s(10),
-                  padding: s(5),
-                  backgroundColor: "#00000090",
-                  borderRadius: ms(20),
-                }}
+                style={styles.closeImageButton}
               />
 
               {image.startsWith("file://") ? (
@@ -359,5 +363,14 @@ export const styles = StyleSheet.create({
     paddingVertical: vs(12),
     borderRadius: s(8),
     alignItems: "center",
+  },
+  closeImageButton: {
+    position: "absolute",
+    zIndex: 1,
+    right: s(10),
+    top: s(10),
+    padding: s(5),
+    backgroundColor: "#00000090",
+    borderRadius: ms(20),
   },
 });

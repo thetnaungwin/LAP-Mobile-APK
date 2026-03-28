@@ -9,6 +9,8 @@ import {
   SafeAreaView,
   Dimensions,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons, AntDesign, Feather } from "@expo/vector-icons";
 import { getColorScheme } from "../../config/color";
@@ -23,16 +25,23 @@ import { fetchPostByUserId } from "../../services/postService";
 import { useSupabase } from "../../config/supabase";
 import { fetchGroups } from "../../services/groupService";
 import { useQueryClient } from "@tanstack/react-query";
-import { leaveGroup } from "../../services/userService";
+import { deleteUserProfile, fetchUserProfile, leaveGroup, updateUserProfile } from "../../services/userService";
+import { fetchPremiumStatus } from "../../services/premiumService";
+import { showMessage } from "react-native-flash-message";
 
 const { width } = Dimensions.get("window");
 
 const Profile = () => {
   const [tab, setTab] = useState<"Posts" | "Communities" | "About">("Posts");
-  const { backgroundColor, profileMdColor, textColor } = getColorScheme();
+  const { backgroundColor, profileMdColor, textColor, modalBg } = getColorScheme();
   const { signOut } = useAuth();
   const { user } = useUser();
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [showEditAccountModal, setShowEditAccountModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [editUsername, setEditUsername] = useState("");
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const dispatch = useDispatch();
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -55,6 +64,28 @@ const Profile = () => {
     staleTime: 10_000,
     placeholderData: (previousData) => previousData,
   });
+
+  const { data: isPremium, isLoading: premiumLoading } = useQuery({
+    queryKey: ["premium", user?.id],
+    enabled: !!user?.id,
+    // @ts-ignore
+    queryFn: () => fetchPremiumStatus(user!.id, supabase),
+    staleTime: 30_000,
+  });
+
+  const {
+    data: userProfile,
+    isLoading: loadingUserProfile,
+  } = useQuery({
+    queryKey: ["userProfile", user?.id],
+    enabled: !!user?.id,
+    // @ts-ignore
+    queryFn: () => fetchUserProfile(user!.id, supabase),
+    staleTime: 30_000,
+  });
+
+  const displayUsername =
+    userProfile?.user_name ?? user?.username ?? "YourUsername";
 
   const { mutate: leaveGroupMutation } = useMutation({
     // @ts-ignore
@@ -90,6 +121,92 @@ const Profile = () => {
     setShowDiscardModal(false);
   };
 
+  const handleSaveAccount = async () => {
+    if (!user?.id) return;
+    const nextUsername = editUsername.trim();
+    if (!nextUsername) {
+      showMessage({
+        message: "Username required",
+        description: "Please enter a username.",
+        type: "warning",
+      });
+      return;
+    }
+
+    setSavingAccount(true);
+    try {
+      await updateUserProfile(
+        user.id,
+        { user_name: nextUsername },
+        supabase
+      );
+
+      // Keep Clerk in sync (best-effort).
+      // Clerk username update support depends on the SDK/provider being used.
+      const maybeUpdate = (user as any)?.update;
+      if (typeof maybeUpdate === "function") {
+        await maybeUpdate.call(user, { username: nextUsername });
+      }
+      setShowEditAccountModal(false);
+
+      await queryClient.invalidateQueries({
+        queryKey: ["userProfile", user.id],
+      });
+
+      showMessage({
+        message: "Account updated",
+        description: "Your username was saved.",
+        type: "success",
+      });
+    } catch (e: any) {
+      showMessage({
+        message: "Update failed",
+        description: e?.message ?? "Could not update account.",
+        type: "danger",
+      });
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    setDeletingAccount(true);
+    setShowDeleteAccountModal(false);
+
+    try {
+      await deleteUserProfile(user.id, supabase);
+      // Also delete the Clerk account for this user (self-delete).
+      // This avoids needing a server-side Clerk secret key.
+      const maybeDelete = (user as any)?.delete;
+      if (typeof maybeDelete === "function") {
+        await maybeDelete.call(user);
+      } else {
+        throw new Error("Clerk user deletion is unavailable in this client.");
+      }
+      showMessage({
+        message: "Account deleted",
+        description: "Your LAPSocial profile data and Clerk account were deleted.",
+        type: "success",
+      });
+    } catch (e: any) {
+      showMessage({
+        message: "Delete failed",
+        description:
+          e?.message ??
+          "We couldn’t delete your account right now. Please try again.",
+        type: "danger",
+      });
+    } finally {
+      try {
+        await signOut();
+      } finally {
+        dispatch(logout());
+        setDeletingAccount(false);
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={[{ ...styles.safeArea, backgroundColor }]}>
       {/* Logout Modal */}
@@ -102,6 +219,65 @@ const Profile = () => {
         btnActionText="Log Out"
         btnCancelText="Cancel"
       />
+
+      {/* Delete Account Modal */}
+      <ModalBox
+        showDiscardModal={showDeleteAccountModal}
+        handleDiscard={handleDeleteAccount}
+        handleCancel={() => setShowDeleteAccountModal(false)}
+        title="Delete account?"
+        BodyText="This will end your session and remove your LAPSocial profile data."
+        btnActionText={deletingAccount ? "Deleting..." : "Delete"}
+        btnCancelText="Cancel"
+      />
+
+      {/* Edit Account Modal */}
+      <Modal
+        visible={showEditAccountModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEditAccountModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.editModalContent, { backgroundColor: modalBg }]}>
+            <Text style={[styles.editModalTitle, { color: textColor }]}>
+              Edit account
+            </Text>
+            <Text style={[styles.editModalLabel, { color: textColor, opacity: 0.9 }]}>
+              Username
+            </Text>
+            <TextInput
+              style={[styles.editInput, { color: textColor, backgroundColor }]}
+              value={editUsername}
+              onChangeText={setEditUsername}
+              autoCapitalize="none"
+              placeholder="Enter username"
+              placeholderTextColor="#999"
+              editable={!savingAccount}
+            />
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#eee" }]}
+                onPress={() => setShowEditAccountModal(false)}
+                disabled={savingAccount}
+              >
+                <Text style={[styles.modalButtonText, { color: "#115BCA" }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#FF5700" }]}
+                onPress={handleSaveAccount}
+                disabled={savingAccount}
+              >
+                <Text style={[styles.modalButtonText, { color: "#fff" }]}>
+                  {savingAccount ? "Saving..." : "Save"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <View
         style={[{ ...styles.profileCard, backgroundColor: profileMdColor }]}
       >
@@ -125,8 +301,26 @@ const Profile = () => {
         {/* User Info */}
         <View style={styles.userInfo}>
           <Text style={[{ ...styles.username, color: textColor }]}>
-            {user?.username ? `u/${user.username}` : "u/YourUsername"}
+            {displayUsername ? `u/${displayUsername}` : "u/YourUsername"}
           </Text>
+          <View style={styles.premiumRow}>
+            {isPremium ? (
+              <View style={styles.premiumBadge}>
+                <Ionicons name="sparkles" size={ms(16)} color="#FF5700" />
+                <Text style={styles.premiumBadgeText}>Premium</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.upgradeButton}
+                onPress={() => router.push("/Premium")}
+                disabled={premiumLoading}
+              >
+                <Text style={styles.upgradeButtonText}>
+                  {premiumLoading ? "Checking..." : "Upgrade"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.statsRow}>
             <Feather name="arrow-up" size={ms(15)} color="#878a8c" />
             <Text style={styles.karma}>1,234 karma</Text>
@@ -252,11 +446,48 @@ const Profile = () => {
             />
           )}
           {tab === "About" && (
-            <View>
-              <Text style={[{ ...styles.bio, color: textColor }]}>
-                This is your LAPSocial app bio. Edit it to tell people about
-                yourself!
-              </Text>
+            <View style={{ gap: vs(12) }}>
+              {/* Account settings */}
+              <View style={[styles.card, { backgroundColor: profileMdColor, borderColor: "rgba(255,87,0,0.15)" }]}>
+                <Text style={[styles.cardTitle, { color: textColor }]}>Account</Text>
+                <View style={styles.rowBetween}>
+                  <View style={{ gap: vs(6) }}>
+                    <Text style={[styles.cardLabel, { color: textColor, opacity: 0.9 }]}>Username</Text>
+                    <Text style={[styles.cardValue, { color: textColor }]}>
+                      {displayUsername}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.primaryMiniButton, { backgroundColor: "#FF5700" }]}
+                    onPress={() => {
+                      setEditUsername(displayUsername);
+                      setShowEditAccountModal(true);
+                    }}
+                    disabled={loadingUserProfile}
+                  >
+                    <Text style={styles.primaryMiniButtonText}>
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Danger zone */}
+              <View style={[styles.card, { backgroundColor: profileMdColor, borderColor: "rgba(255,69,69,0.18)" }]}>
+                <Text style={[styles.cardTitle, { color: textColor }]}>Danger Zone</Text>
+                <Text style={[styles.dangerText, { color: textColor }]}>
+                  Delete your LAPSocial account and remove your profile data from this app.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.dangerButton, { opacity: deletingAccount ? 0.7 : 1 }]}
+                  onPress={() => setShowDeleteAccountModal(true)}
+                  disabled={deletingAccount}
+                >
+                  <Text style={styles.dangerButtonText}>
+                    {deletingAccount ? "Deleting..." : "Delete account"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
@@ -283,7 +514,7 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     width: width > 420 ? 420 : width * 0.95,
-    height: "80%",
+    height: "95%",
     borderRadius: s(18),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -292,7 +523,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     alignItems: "center",
     marginTop: vs(32),
-    marginBottom: vs(16),
+    marginBottom: vs(4),
     overflow: "visible",
   },
   banner: {
@@ -446,6 +677,153 @@ const styles = StyleSheet.create({
     fontSize: ms(16),
     textAlign: "center",
     marginTop: 16,
+  },
+  card: {
+    width: "100%",
+    borderRadius: ms(16),
+    padding: s(14),
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 2,
+    marginBottom: vs(12),
+  },
+  cardTitle: {
+    fontSize: ms(16),
+    fontWeight: "900",
+    marginBottom: vs(10),
+  },
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: s(12),
+  },
+  cardLabel: {
+    fontSize: ms(13),
+    fontWeight: "700",
+  },
+  cardValue: {
+    fontSize: ms(14),
+    fontWeight: "900",
+    marginTop: vs(4),
+  },
+  primaryMiniButton: {
+    borderRadius: ms(999),
+    paddingVertical: vs(8),
+    paddingHorizontal: s(14),
+  },
+  primaryMiniButtonText: {
+    color: "white",
+    fontWeight: "900",
+    fontSize: ms(13),
+  },
+  dangerText: {
+    fontSize: ms(14),
+    lineHeight: vs(20),
+    opacity: 0.92,
+    marginBottom: vs(12),
+    fontWeight: "600",
+  },
+  dangerButton: {
+    borderRadius: ms(14),
+    paddingVertical: vs(12),
+    paddingHorizontal: s(14),
+    backgroundColor: "rgba(255,69,69,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,69,69,0.45)",
+    alignItems: "center",
+  },
+  dangerButtonText: {
+    color: "#FF3B30",
+    fontWeight: "900",
+    fontSize: ms(14),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: s(16),
+  },
+  editModalContent: {
+    width: "100%",
+    borderRadius: ms(18),
+    padding: s(16),
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+  },
+  editModalTitle: {
+    fontSize: ms(18),
+    fontWeight: "900",
+    marginBottom: vs(12),
+    textAlign: "center",
+  },
+  editModalLabel: {
+    fontSize: ms(13),
+    fontWeight: "800",
+    marginBottom: vs(8),
+  },
+  editInput: {
+    borderRadius: ms(14),
+    paddingHorizontal: s(12),
+    paddingVertical: vs(12),
+    fontSize: ms(15),
+    marginBottom: vs(14),
+    borderWidth: 1,
+    borderColor: "rgba(255,87,0,0.25)",
+  },
+  modalButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: s(10),
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: ms(14),
+    paddingVertical: vs(12),
+    alignItems: "center",
+  },
+  modalButtonText: {
+    fontWeight: "900",
+    fontSize: ms(14),
+  },
+  premiumRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: vs(10),
+    marginTop: vs(6),
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: s(8),
+    paddingHorizontal: s(12),
+    paddingVertical: vs(6),
+    borderRadius: ms(999),
+    backgroundColor: "rgba(255,87,0,0.12)",
+  },
+  premiumBadgeText: {
+    fontSize: ms(14),
+    fontWeight: "800",
+    color: "#FF5700",
+  },
+  upgradeButton: {
+    backgroundColor: "#FF5700",
+    borderRadius: ms(999),
+    paddingHorizontal: s(14),
+    paddingVertical: vs(8),
+  },
+  upgradeButtonText: {
+    color: "white",
+    fontWeight: "900",
+    fontSize: ms(14),
   },
   logoutButton: {
     flexDirection: "row",

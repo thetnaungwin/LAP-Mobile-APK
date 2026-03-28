@@ -44,6 +44,16 @@ export default function AuthHomeLayout() {
           gestureEnabled: false,
         }}
       />
+      <Stack.Screen
+        name="Premium"
+        options={{
+          animation: "ios_from_right",
+          headerTitle: "Premium",
+          presentation: "transparentModal",
+          headerTransparent: true,
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

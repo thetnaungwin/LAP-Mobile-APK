@@ -15,6 +15,42 @@ export const fetchUsers = async (supabase: SupabaseClient): Promise<User[]> => {
   }
 };
 
+export const fetchUserProfile = async (
+  userId: string,
+  supabase: SupabaseClient
+): Promise<any> => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateUserProfile = async (
+  userId: string,
+  payload: { user_name: string; image?: string | null },
+  supabase: SupabaseClient
+): Promise<void> => {
+  // Keep payload simple: update username (and optional image if your table has it).
+  const updatePayload: any = { user_name: payload.user_name };
+  if (payload.image !== undefined) updatePayload.image = payload.image;
+
+  const { error } = await supabase
+    .from("users")
+    .update(updatePayload)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+};
+
+export const deleteUserProfile = async (userId: string, supabase: SupabaseClient) => {
+  const { error } = await supabase.from("users").delete().eq("user_id", userId);
+  if (error) throw error;
+};
+
 export const createUser = async (
   supabase: SupabaseClient,
   user: User
